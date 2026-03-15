@@ -54,6 +54,26 @@ cursor:pointer;
 margin-right:5px;
 }
 
+.summary{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.card{
+flex:1;
+padding:15px;
+border-radius:10px;
+}
+
+.card h3{
+margin:5px 0;
+}
+
+.pengeluaranCard{background:#ffe5e5;}
+.pemasukanCard{background:#e5f0ff;}
+.saldoCard{background:#e8ffe5;}
+
 table{
 width:100%;
 border-collapse:collapse;
@@ -88,8 +108,26 @@ margin-top:20px;
 
 <h2>Aplikasi Keuangan</h2>
 
-<h3>Grafik Pengeluaran</h3>
+<div class="summary">
 
+<div class="card pengeluaranCard">
+Total Pengeluaran
+<h3 id="totalPengeluaran">Rp 0</h3>
+</div>
+
+<div class="card pemasukanCard">
+Total Pemasukan
+<h3 id="totalPemasukan">Rp 0</h3>
+</div>
+
+<div class="card saldoCard">
+Saldo
+<h3 id="saldo">Rp 0</h3>
+</div>
+
+</div>
+
+<h3>Grafik Pengeluaran</h3>
 <canvas id="chartPengeluaran"></canvas>
 
 <label>Tipe</label>
@@ -294,6 +332,7 @@ tbody.appendChild(tr)
 
 })
 
+updateTotal()
 loadChart()
 
 }
@@ -329,14 +368,35 @@ loadSub()
 
 }
 
+function updateTotal(){
+
+let pengeluaran=0
+let pemasukan=0
+
+transaksi.forEach(t=>{
+
+if(t.tipe=="Pengeluaran"){
+pengeluaran+=Number(t.jumlah)
+}
+
+if(t.tipe=="Pemasukan"){
+pemasukan+=Number(t.jumlah)
+}
+
+})
+
+document.getElementById("totalPengeluaran").innerText="Rp "+pengeluaran.toLocaleString()
+document.getElementById("totalPemasukan").innerText="Rp "+pemasukan.toLocaleString()
+document.getElementById("saldo").innerText="Rp "+(pemasukan-pengeluaran).toLocaleString()
+
+}
+
 function exportExcel(){
 
 let csv="Tanggal,Tipe,Kategori,Sub,Jumlah,Catatan\n"
 
 transaksi.forEach(t=>{
-
 csv+=`${t.tanggal},${t.tipe},${t.kategori},${t.sub},${t.jumlah},${t.catatan}\n`
-
 })
 
 let blob=new Blob([csv],{type:"text/csv"})
