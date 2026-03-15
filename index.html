@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
 
 <meta charset="UTF-8">
@@ -116,6 +117,7 @@ max-width:100%;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -144,8 +146,10 @@ Saldo
 </div>
 
 <h3>Grafik Pengeluaran</h3>
-
 <canvas id="chartPengeluaran"></canvas>
+
+<h3 style="margin-top:30px;">Grafik Pemasukan</h3>
+<canvas id="chartPemasukan"></canvas>
 
 <label>Tipe</label>
 
@@ -261,7 +265,8 @@ Pemasukan:[
 
 let transaksi=JSON.parse(localStorage.getItem("data"))||[]
 
-let chart
+let chartPengeluaran
+let chartPemasukan
 
 function loadKategori(){
 
@@ -450,50 +455,71 @@ a.click()
 
 function loadChart(){
 
-let dataKategori={}
+let dataPengeluaran={}
+let dataPemasukan={}
 
 transaksi.forEach(t=>{
 
 if(t.tipe=="Pengeluaran"){
 
-if(!dataKategori[t.kategori]){
-dataKategori[t.kategori]=0
+if(!dataPengeluaran[t.kategori]){
+dataPengeluaran[t.kategori]=0
 }
 
-dataKategori[t.kategori]+=Number(t.jumlah)
+dataPengeluaran[t.kategori]+=Number(t.jumlah)
+
+}
+
+if(t.tipe=="Pemasukan"){
+
+if(!dataPemasukan[t.sub]){
+dataPemasukan[t.sub]=0
+}
+
+dataPemasukan[t.sub]+=Number(t.jumlah)
 
 }
 
 })
 
-let labels=Object.keys(dataKategori)
-let values=Object.values(dataKategori)
+let ctx1=document.getElementById("chartPengeluaran")
+let ctx2=document.getElementById("chartPemasukan")
 
-let ctx=document.getElementById("chartPengeluaran")
-
-if(chart){
-chart.destroy()
+if(chartPengeluaran){
+chartPengeluaran.destroy()
 }
 
-chart=new Chart(ctx,{
+if(chartPemasukan){
+chartPemasukan.destroy()
+}
+
+chartPengeluaran=new Chart(ctx1,{
 type:"bar",
 data:{
-labels:labels,
+labels:Object.keys(dataPengeluaran),
 datasets:[{
-label:"Pengeluaran",
-data:values,
+data:Object.values(dataPengeluaran),
 backgroundColor:"#ff6384"
 }]
 },
 options:{
-plugins:{
-legend:{display:false}
+plugins:{legend:{display:false}},
+scales:{y:{beginAtZero:true}}
+}
+})
+
+chartPemasukan=new Chart(ctx2,{
+type:"bar",
+data:{
+labels:Object.keys(dataPemasukan),
+datasets:[{
+data:Object.values(dataPemasukan),
+backgroundColor:"#4a90e2"
+}]
 },
-scales:{
-y:{
-beginAtZero:true
-}
-}
+options:{
+plugins:{legend:{display:false}},
+scales:{y:{beginAtZero:true}}
 }
 })
 
