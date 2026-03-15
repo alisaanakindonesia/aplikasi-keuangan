@@ -3,15 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Aplikasi Keuangan</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
 font-family:Arial;
 background:linear-gradient(135deg,#667eea,#764ba2);
-padding:0;
 margin:0;
+padding:0;
 }
 
 .container{
@@ -26,9 +29,9 @@ margin:0;
 .container{
 max-width:900px;
 margin:auto;
-border-radius:15px;
 margin-top:20px;
 margin-bottom:20px;
+border-radius:15px;
 }
 }
 
@@ -60,7 +63,6 @@ margin-top:20px;
 th,td{
 padding:10px;
 border-bottom:1px solid #ddd;
-text-align:left;
 }
 
 .amount{
@@ -73,6 +75,10 @@ color:#1976d2;
 font-weight:bold;
 }
 
+canvas{
+margin-top:20px;
+}
+
 </style>
 </head>
 
@@ -81,6 +87,10 @@ font-weight:bold;
 <div class="container">
 
 <h2>Aplikasi Keuangan</h2>
+
+<h3>Grafik Pengeluaran</h3>
+
+<canvas id="chartPengeluaran"></canvas>
 
 <label>Tipe</label>
 <select id="tipe">
@@ -190,6 +200,8 @@ Pemasukan:[
 
 let transaksi=JSON.parse(localStorage.getItem("data"))||[]
 
+let chart
+
 function loadKategori(){
 
 let tipe=document.getElementById("tipe").value
@@ -282,6 +294,8 @@ tbody.appendChild(tr)
 
 })
 
+loadChart()
+
 }
 
 render()
@@ -348,6 +362,52 @@ a.href=URL.createObjectURL(blob)
 a.download="backup_keuangan.json"
 
 a.click()
+
+}
+
+function loadChart(){
+
+let dataKategori={}
+
+transaksi.forEach(t=>{
+
+if(t.tipe=="Pengeluaran"){
+
+if(!dataKategori[t.kategori]){
+dataKategori[t.kategori]=0
+}
+
+dataKategori[t.kategori]+=Number(t.jumlah)
+
+}
+
+})
+
+let labels=Object.keys(dataKategori)
+let values=Object.values(dataKategori)
+
+let ctx=document.getElementById("chartPengeluaran")
+
+if(chart){
+chart.destroy()
+}
+
+chart=new Chart(ctx,{
+type:"pie",
+data:{
+labels:labels,
+datasets:[{
+data:values,
+backgroundColor:[
+"#ff6384",
+"#36a2eb",
+"#ffce56",
+"#4bc0c0",
+"#9966ff"
+]
+}]
+}
+})
 
 }
 
