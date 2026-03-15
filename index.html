@@ -4,101 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aplikasi Keuangan</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-*{box-sizing:border-box}
 
 body{
-font-family:Arial,Helvetica,sans-serif;
-margin:0;
+font-family:Arial;
 background:linear-gradient(135deg,#667eea,#764ba2);
+padding:20px;
 }
 
 .container{
-width:100%;
-max-width:900px;
-margin:auto;
 background:white;
-min-height:100vh;
-padding:16px;
-}
-
-h1{text-align:center;margin-top:0}
-
-.card{
-background:#f4f4f4;
-padding:15px;
-border-radius:10px;
-margin-bottom:15px;
+padding:20px;
+border-radius:15px;
+max-width:800px;
+margin:auto;
 }
 
 input,select{
 width:100%;
 padding:10px;
-margin-top:6px;
-margin-bottom:10px;
-border-radius:8px;
-border:1px solid #ccc;
+margin-top:5px;
+margin-bottom:15px;
 }
 
 button{
-background:#4facfe;
-color:white;
+padding:10px 15px;
 border:none;
-padding:10px 14px;
-border-radius:8px;
+border-radius:6px;
+background:#4a90e2;
+color:white;
 cursor:pointer;
-margin-right:6px;
-margin-top:5px;
 }
-
-button.secondary{background:#6c757d}
-button.danger{background:#e74c3c}
-
-.table-wrapper{overflow-x:auto}
 
 table{
 width:100%;
 border-collapse:collapse;
-font-size:14px;
+margin-top:20px;
 }
 
 th,td{
-padding:8px;
-border-bottom:1px solid #ddd;
-text-align:left;
-}
-
-th{background:#eee}
-
-.summary{
-display:flex;
-justify-content:space-between;
-flex-wrap:wrap;
-gap:10px;
-}
-
-.summary div{
-background:white;
 padding:10px;
-border-radius:8px;
-box-shadow:0 2px 4px rgba(0,0,0,0.1);
+border-bottom:1px solid #ddd;
 }
 
-@media(max-width:768px){
-
-.container{
-max-width:100%;
-padding:12px;
+.amount{
+color:#e53935;
+font-weight:bold;
 }
 
-th,td{
-font-size:12px;
-padding:6px;
+.pemasukan{
+color:#1976d2;
+font-weight:bold;
 }
 
-}
 </style>
 </head>
 
@@ -106,24 +65,12 @@ padding:6px;
 
 <div class="container">
 
-<h1>💰 Aplikasi Keuangan</h1>
-
-<div class="card summary">
-<div>Total Pemasukan: <b id="totalIncome">Rp0</b></div>
-<div>Total Pengeluaran: <b id="totalExpense">Rp0</b></div>
-<div>Saldo: <b id="saldo">Rp0</b></div>
-</div>
-
-<div class="card">
-<canvas id="chart"></canvas>
-</div>
-
-<div class="card">
+<h2>Aplikasi Keuangan</h2>
 
 <label>Tipe</label>
 <select id="tipe">
-<option value="Pengeluaran">Pengeluaran</option>
-<option value="Pemasukan">Pemasukan</option>
+<option>Pengeluaran</option>
+<option>Pemasukan</option>
 </select>
 
 <label>Tanggal</label>
@@ -141,14 +88,25 @@ padding:6px;
 <label>Catatan</label>
 <input type="text" id="catatan">
 
-<button onclick="tambah()">Simpan</button>
-<button class="secondary" onclick="exportExcel()">Export Excel</button>
-<button class="secondary" onclick="backupJSON()">Backup Data</button>
+<button onclick="simpan()">Simpan</button>
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="backup()">Backup Data</button>
 
-</div>
+<hr>
 
-<div class="card table-wrapper">
+<h3>Tambah Sub Kategori</h3>
+
+<select id="kategoriBaru">
+<option value="Pengeluaran">Pengeluaran</option>
+<option value="Pemasukan">Pemasukan</option>
+</select>
+
+<input type="text" id="subBaru" placeholder="Nama sub kategori">
+
+<button onclick="tambahSub()">Tambah Sub</button>
+
 <table>
+
 <thead>
 <tr>
 <th>Tanggal</th>
@@ -157,83 +115,105 @@ padding:6px;
 <th>Sub</th>
 <th>Jumlah</th>
 <th>Catatan</th>
-<th></th>
+<th>Aksi</th>
 </tr>
 </thead>
-<tbody id="tbody"></tbody>
+
+<tbody id="data"></tbody>
+
 </table>
-</div>
 
 </div>
 
 <script>
 
-const kategoriData={
-"Tagihan Bulanan":["BPJS","Listrik Bulanan","Token Listrik","Bayar Sampah","Iuran RT","Telkomsel Kartu Halo","Internet"],
-"Konsumsi":["Belanja Supermarket","GoFood","Makan di Luar","Belanja Mall","Belanja Tokopedia","Keperluan lain"],
-"Pemasukan":["Gaji","Bonus","Pendapatan Lain"]
+let kategori={
+Pengeluaran:[
+"Belanja Supermarket",
+"Gojek / GoFood",
+"Makan di Luar",
+"Belanja di Mall",
+"Bekel Anak",
+"Bensin Kendaraan",
+"Keperluan Lain"
+],
+
+Pemasukan:[
+"Gaji",
+"Bonus",
+"Penjualan Produk",
+"Pendapatan Lainnya"
+]
 }
 
-let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[]
+let transaksi=JSON.parse(localStorage.getItem("data"))||[]
 
-const kategoriSelect=document.getElementById("kategori")
-const subSelect=document.getElementById("sub")
+function loadKategori(){
 
-Object.keys(kategoriData).forEach(k=>{
-let o=document.createElement("option")
-o.value=k
-o.textContent=k
-kategoriSelect.appendChild(o)
+let tipe=document.getElementById("tipe").value
+let kat=document.getElementById("kategori")
+
+kat.innerHTML=""
+
+let option=document.createElement("option")
+option.textContent=tipe
+kat.appendChild(option)
+
+loadSub()
+
+}
+
+function loadSub(){
+
+let tipe=document.getElementById("tipe").value
+let sub=document.getElementById("sub")
+
+sub.innerHTML=""
+
+kategori[tipe].forEach((s,i)=>{
+
+let option=document.createElement("option")
+option.value=s
+option.textContent=s
+sub.appendChild(option)
+
 })
 
-kategoriSelect.addEventListener("change",()=>{
-subSelect.innerHTML=""
-kategoriData[kategoriSelect.value].forEach(s=>{
-let o=document.createElement("option")
-o.value=s
-o.textContent=s
-subSelect.appendChild(o)
-})
-})
+}
 
-kategoriSelect.dispatchEvent(new Event("change"))
+document.getElementById("tipe").addEventListener("change",loadKategori)
 
-function rupiah(n){return "Rp "+Number(n).toLocaleString("id-ID")}
+loadKategori()
 
-function tambah(){
+function simpan(){
 
-const data={
+let t={
 id:Date.now(),
-tipe:document.getElementById("tipe").value,
 tanggal:document.getElementById("tanggal").value,
-kategori:kategoriSelect.value,
-sub:subSelect.value,
-jumlah:Number(document.getElementById("jumlah").value),
+tipe:document.getElementById("tipe").value,
+kategori:document.getElementById("kategori").value,
+sub:document.getElementById("sub").value,
+jumlah:document.getElementById("jumlah").value,
 catatan:document.getElementById("catatan").value
 }
 
-if(!data.tanggal||!data.jumlah)return
+transaksi.push(t)
 
-transaksi.push(data)
-
-localStorage.setItem("transaksi",JSON.stringify(transaksi))
+localStorage.setItem("data",JSON.stringify(transaksi))
 
 render()
 
-}
-
-function hapus(id){
-transaksi=transaksi.filter(t=>t.id!=id)
-localStorage.setItem("transaksi",JSON.stringify(transaksi))
-render()
 }
 
 function render(){
 
-const tbody=document.getElementById("tbody")
+let tbody=document.getElementById("data")
+
 tbody.innerHTML=""
 
 transaksi.forEach(t=>{
+
+let warna=t.tipe=="Pemasukan"?"pemasukan":"amount"
 
 let tr=document.createElement("tr")
 
@@ -242,57 +222,43 @@ tr.innerHTML=`
 <td>${t.tipe}</td>
 <td>${t.kategori}</td>
 <td>${t.sub}</td>
-<td>${rupiah(t.jumlah)}</td>
+<td class="${warna}">Rp ${Number(t.jumlah).toLocaleString()}</td>
 <td>${t.catatan||"-"}</td>
-<td><button class="danger" onclick="hapus(${t.id})">X</button></td>
+<td>
+<button onclick="hapus(${t.id})">X</button>
+</td>
 `
 
 tbody.appendChild(tr)
 
 })
 
-updateSummary()
-updateChart()
+}
+
+render()
+
+function hapus(id){
+
+transaksi=transaksi.filter(t=>t.id!=id)
+
+localStorage.setItem("data",JSON.stringify(transaksi))
+
+render()
 
 }
 
-function updateSummary(){
+function tambahSub(){
 
-let income=0
-let expense=0
+let kat=document.getElementById("kategoriBaru").value
+let sub=document.getElementById("subBaru").value
 
-transaksi.forEach(t=>{
-if(t.tipe=="Pemasukan") income+=t.jumlah
-else expense+=t.jumlah
-})
+if(sub=="")return
 
+kategori[kat].push(sub)
 
-document.getElementById("totalIncome").innerText=rupiah(income)
-document.getElementById("totalExpense").innerText=rupiah(expense)
-document.getElementById("saldo").innerText=rupiah(income-expense)
+alert("Sub kategori ditambahkan")
 
-}
-
-let chart
-
-function updateChart(){
-
-let data={}
-
-transaksi.forEach(t=>{
-if(!data[t.kategori]) data[t.kategori]=0
-data[t.kategori]+=t.jumlah
-})
-
-const labels=Object.keys(data)
-const values=Object.values(data)
-
-if(chart) chart.destroy()
-
-chart=new Chart(document.getElementById("chart"),{
-type:"pie",
-data:{labels:labels,datasets:[{data:values}]}
-})
+loadSub()
 
 }
 
@@ -302,31 +268,35 @@ let csv="Tanggal,Tipe,Kategori,Sub,Jumlah,Catatan\n"
 
 transaksi.forEach(t=>{
 
-csv+=`${t.tanggal},${t.tipe},${t.kategori},${t.sub},${t.jumlah},${t.catatan||""}\n`
+csv+=`${t.tanggal},${t.tipe},${t.kategori},${t.sub},${t.jumlah},${t.catatan}\n`
 
 })
 
 let blob=new Blob([csv],{type:"text/csv"})
 
 let a=document.createElement("a")
+
 a.href=URL.createObjectURL(blob)
+
 a.download="laporan_keuangan.csv"
+
 a.click()
 
 }
 
-function backupJSON(){
+function backup(){
 
 let blob=new Blob([JSON.stringify(transaksi)],{type:"application/json"})
 
 let a=document.createElement("a")
+
 a.href=URL.createObjectURL(blob)
+
 a.download="backup_keuangan.json"
+
 a.click()
 
 }
-
-render()
 
 </script>
 
