@@ -17,7 +17,7 @@ padding:20px;
 background:white;
 padding:20px;
 border-radius:15px;
-max-width:800px;
+max-width:900px;
 margin:auto;
 }
 
@@ -73,14 +73,14 @@ font-weight:bold;
 <option>Pemasukan</option>
 </select>
 
-<label>Tanggal</label>
-<input type="date" id="tanggal">
-
 <label>Kategori</label>
 <select id="kategori"></select>
 
 <label>Sub Kategori</label>
 <select id="sub"></select>
+
+<label>Tanggal</label>
+<input type="date" id="tanggal">
 
 <label>Jumlah</label>
 <input type="number" id="jumlah">
@@ -97,7 +97,11 @@ font-weight:bold;
 <h3>Tambah Sub Kategori</h3>
 
 <select id="kategoriBaru">
-<option value="Pengeluaran">Pengeluaran</option>
+<option value="Tagihan">Tagihan</option>
+<option value="Belanja">Belanja</option>
+<option value="Makan">Makan</option>
+<option value="Transport">Transport</option>
+<option value="Lainnya">Lainnya</option>
 <option value="Pemasukan">Pemasukan</option>
 </select>
 
@@ -128,16 +132,37 @@ font-weight:bold;
 <script>
 
 let kategori={
-Pengeluaran:[
-"Belanja Supermarket",
-"Gojek / GoFood",
-"Makan di Luar",
-"Belanja di Mall",
-"Bekel Anak",
-"Bensin Kendaraan",
-"Keperluan Lain"
+
+Pengeluaran:{
+Tagihan:[
+"Bayar Listrik",
+"Beli Token Listrik",
+"Bayar Internet",
+"Bayar BPJS",
+"Bayar Pulsa"
 ],
 
+Belanja:[
+"Belanja Supermarket",
+"Belanja di Mall"
+],
+
+Makan:[
+"Gojek / GoFood",
+"Makan di Luar",
+"Bekel Anak"
+],
+
+Transport:[
+"Bensin Kendaraan"
+],
+
+Lainnya:[
+"Keperluan Lain"
+]
+},
+
+Pemasukan:{
 Pemasukan:[
 "Gaji",
 "Bonus",
@@ -146,18 +171,26 @@ Pemasukan:[
 ]
 }
 
+}
+
 let transaksi=JSON.parse(localStorage.getItem("data"))||[]
 
 function loadKategori(){
 
 let tipe=document.getElementById("tipe").value
-let kat=document.getElementById("kategori")
+let kategoriSelect=document.getElementById("kategori")
 
-kat.innerHTML=""
+kategoriSelect.innerHTML=""
+
+Object.keys(kategori[tipe]).forEach(k=>{
 
 let option=document.createElement("option")
-option.textContent=tipe
-kat.appendChild(option)
+option.value=k
+option.textContent=k
+
+kategoriSelect.appendChild(option)
+
+})
 
 loadSub()
 
@@ -166,15 +199,17 @@ loadSub()
 function loadSub(){
 
 let tipe=document.getElementById("tipe").value
+let kat=document.getElementById("kategori").value
 let sub=document.getElementById("sub")
 
 sub.innerHTML=""
 
-kategori[tipe].forEach((s,i)=>{
+kategori[tipe][kat].forEach(s=>{
 
 let option=document.createElement("option")
 option.value=s
 option.textContent=s
+
 sub.appendChild(option)
 
 })
@@ -182,6 +217,7 @@ sub.appendChild(option)
 }
 
 document.getElementById("tipe").addEventListener("change",loadKategori)
+document.getElementById("kategori").addEventListener("change",loadSub)
 
 loadKategori()
 
@@ -254,7 +290,11 @@ let sub=document.getElementById("subBaru").value
 
 if(sub=="")return
 
-kategori[kat].push(sub)
+if(kat=="Pemasukan"){
+kategori.Pemasukan.Pemasukan.push(sub)
+}else{
+kategori.Pengeluaran[kat].push(sub)
+}
 
 alert("Sub kategori ditambahkan")
 
